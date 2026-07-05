@@ -12,26 +12,49 @@ workflows:
         bundle_identifier: kr.moveto.codeapp
       vars:
         BUNDLE_ID: kr.moveto.codeapp
-        XCODE_WORKSPACE: "Code.xcworkspace" # <-- Put the name of your Xcode workspace here
-        XCODE_SCHEME: "Code" # <-- Put the name of your Xcode scheme here
+        XCODE_PROJECT: "Code.xcodeproj"
+        XCODE_SCHEME: "Code App"
         APP_STORE_APPLE_ID: 1555555551
       xcode: latest
-      cocoapods: default
     scripts:
-      - name: Install CocoaPods dependencies
-        script: | 
-          pod install
+      - name: Generate Secrets
+        script: |
+          echo "let JUDGE0_ENDPOINT = \"${JUDGE0_ENDPOINT:-}\"" > CodeApp/Constants/Secrets.swift
+          echo "let JUDGE0_KEY = \"${JUDGE0_KEY:-}\"" >> CodeApp/Constants/Secrets.swift
+      - name: Update bundle identifier
+        script: |
+          python3 -c "
+          import os
+          bundle_id = os.environ.get('BUNDLE_ID', 'thebaselab.VS-Code')
+          for filepath in ['Code.xcodeproj/project.pbxproj', 'CodeApp/Managers/AppExtensionService.swift']:
+              if os.path.exists(filepath):
+                  print(f'Updating bundle ID in {filepath} to {bundle_id}...')
+                  with open(filepath, 'r') as file:
+                      content = file.read()
+                  content = content.replace('thebaselab.VS-Code', bundle_id)
+                  with open(filepath, 'w') as file:
+                      file.write(content)
+          "
+      - name: Download external frameworks and resources
+        script: |
+          chmod +x downloadFrameworks.sh
+          ./downloadFrameworks.sh
       - name: Set up provisioning profiles settings on Xcode project
-        script: xcode-project use-profiles
+        script: xcode-project use-profiles --warn-only
       - name: Increment build number
         script: | 
           cd $CM_BUILD_DIR
           LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID")
-          agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
+          if [ -z "$LATEST_BUILD_NUMBER" ]; then
+            UPDATED_BUILD_NUMBER=$BUILD_NUMBER
+          else
+            UPDATED_BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
+          fi
+          agvtool new-version -all $UPDATED_BUILD_NUMBER
       - name: Build ipa for distribution
         script: | 
           xcode-project build-ipa \
-            --workspace "$CM_BUILD_DIR/$XCODE_WORKSPACE" \
+            --project "$CM_BUILD_DIR/$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
@@ -57,3 +80,4 @@ workflows:
         # Configuration related to App Store (optional)
         # Note: This action is performed during post-processing.
         submit_to_app_store: false
+
