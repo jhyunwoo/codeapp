@@ -12,8 +12,8 @@ workflows:
         bundle_identifier: kr.moveto.codeapp
       vars:
         BUNDLE_ID: kr.moveto.codeapp
-        XCODE_WORKSPACE: "CodemagicSample.xcworkspace" # <-- Put the name of your Xcode workspace here
-        XCODE_SCHEME: "CodemagicSample" # <-- Put the name of your Xcode scheme here
+        XCODE_WORKSPACE: "Code.xcworkspace" # <-- Put the name of your Xcode workspace here
+        XCODE_SCHEME: "Code" # <-- Put the name of your Xcode scheme here
         APP_STORE_APPLE_ID: 1555555551
       xcode: latest
       cocoapods: default
@@ -41,8 +41,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - user_1@example.com
-          - user_2@example.com
+          - jhyunwoo0228@gmail.com
         notify:
           success: true
           failure: false
@@ -53,8 +52,7 @@ workflows:
         # Note: This action is performed during post-processing.
         submit_to_testflight: true
         beta_groups: # Specify the names of beta tester groups that will get access to the build once it has passed beta review.
-          - group name 1
-          - group name 2
+          - Team (Expo)
 
         # Configuration related to App Store (optional)
         # Note: This action is performed during post-processing.
